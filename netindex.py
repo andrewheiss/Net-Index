@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
+import csv
 import json
+import os.path
 import requests
 from collections import namedtuple
 from datetime import datetime, timedelta
+from random import choice, sample
+from time import sleep
 
 # For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
 
-# TODO: Get global values
+# MAYBE: Get global values
 # MAYBE: Get ISP information
-# MAYBE: Filter states in full list?
 
 class NetIndex():
     """docstring for Netindex"""
@@ -107,22 +110,61 @@ def extract_states(raw_json):
     return(states)
 
 def extract_cities(raw_json):
-    City = namedtuple('City', ['name', 'state', 'unit_id'])
-    cities = [City(row['label'][:-4], row['label'][-2:], row['id'])
+    City = namedtuple('City', ['name', 'state', 'unit_id',
+                               'latitude', 'longitude'])
+    cities = [City(row['label'][:-4], row['label'][-2:], row['id'],
+                   row['latitude'], row['longitude'])
               for row in raw_json.get('data')]
     return(cities)
 
+def parse_city(raw_json):
+    # TODO: Make sure these are all the values wanted (i.e. no IP addresses or # ISPs)
+    Statistic = namedtuple('Statistic', ['date', 'value'])
+    data = [Statistic(row['aggregate_date'], row['index_value'])
+            for row in raw_json.get('data').get('index_values')]
+    return(data)
+
 
 if __name__ == '__main__':
-    # Logic:
-    # 1. Get list of states or cities (allow specific state? Create function that lists all cities in a given state?)
-    # 2. Loop through each id and get 7 statistics from each
-    # 3. Save as CSV
+    filename = "test.csv"
+    wait_time = range(5, 10)
 
     net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
 
     cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
-    for city in cities[0:2]:
-        city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
-                                 stat='dl_broadband', start_date='2015-07-20')
-        print(city_data)
+
+    for city in cities[0:3]:
+        print(city.name)
+        # wait = choice(wait_time)
+        # sleep(wait)
+
+        # rows = []
+
+        # # Get all the statistics for each city and save to list of dictionaries
+        # for stat in list(net.possible_stats):
+        #     city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
+        #                              stat=stat, start_date='2000-01-01')
+
+        #     parsed = parse_city(city_data)
+
+        #     for entry in parsed:
+        #         row = {'date': entry.date, 'city': city.name,
+        #                'state': city.state, 'net_index_id': city.unit_id,
+        #                'lat': city.latitude, 'long': city.longitude,
+        #                'stat': stat, 'value': entry.value}
+        #         rows.append(row)
+
+        # # Write to CSV
+        # file_exists = os.path.isfile(filename)
+
+        # with open(filename, 'a') as csvfile:
+        #     fieldnames = ['date', 'city', 'state', 'net_index_id',
+        #                   'lat', 'long', 'stat', 'value']
+        #     w = csv.DictWriter(csvfile, fieldnames=fieldnames,
+        #                        delimiter=',', lineterminator='\n')
+
+        #     if not file_exists:
+        #         w.writeheader()
+
+        #     for row in rows:
+        #         w.writerow(row)
