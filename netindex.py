@@ -5,6 +5,8 @@ import requests
 from collections import namedtuple
 from datetime import datetime, timedelta
 
+# For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
+
 # TODO: Get global values
 # MAYBE: Get ISP information
 # MAYBE: Filter states in full list?
@@ -119,13 +121,8 @@ if __name__ == '__main__':
 
     net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
 
-    # states = extract_states(net.get_list(geo_unit='state', country_id=1))
     cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
-    for city in cities:
-        print(city.name)
-
-    # data = net.get_data(geo_unit='country', unit_id=1, stat='dl_broadband',
-    # data = net.get_data(geo_unit='state', unit_id=62, stat='dl_broadband',
-    # data = net.get_data(geo_unit='city', unit_id=3953, stat='dl_broadband',
-    #                     start_date='2015-07-21')
-    # print(data)
+    for city in cities[0:2]:
+        city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
+                                 stat='dl_broadband', start_date='2015-07-20')
+        print(city_data)
