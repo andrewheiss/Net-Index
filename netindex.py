@@ -2,6 +2,7 @@
 
 import json
 import requests
+from collections import namedtuple
 from datetime import datetime, timedelta
 
 # TODO: Get global values
@@ -97,6 +98,19 @@ class NetIndex():
         return(data)
 
 
+def extract_states(raw_json):
+    State = namedtuple('State', ['name', 'abbreviation', 'unit_id'])
+    states = [State(row['label'], row['alpha_code'], row['id'])
+              for row in raw_json.get('data')]
+    return(states)
+
+def extract_cities(raw_json):
+    City = namedtuple('City', ['name', 'state', 'unit_id'])
+    cities = [City(row['label'][:-4], row['label'][-2:], row['id'])
+              for row in raw_json.get('data')]
+    return(cities)
+
+
 if __name__ == '__main__':
     # Logic:
     # 1. Get list of states or cities (allow specific state? Create function that lists all cities in a given state?)
@@ -105,10 +119,13 @@ if __name__ == '__main__':
 
     net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
 
-    # data = net.get_list(geo_unit='state', country_id=1)
+    # states = extract_states(net.get_list(geo_unit='state', country_id=1))
+    cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
+    for city in cities:
+        print(city.name)
 
     # data = net.get_data(geo_unit='country', unit_id=1, stat='dl_broadband',
     # data = net.get_data(geo_unit='state', unit_id=62, stat='dl_broadband',
-    data = net.get_data(geo_unit='city', unit_id=3953, stat='dl_broadband',
-                        start_date='2015-07-21')
-    print(data)
+    # data = net.get_data(geo_unit='city', unit_id=3953, stat='dl_broadband',
+    #                     start_date='2015-07-21')
+    # print(data)
