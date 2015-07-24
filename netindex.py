@@ -134,37 +134,36 @@ if __name__ == '__main__':
     cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
 
     for city in cities[0:3]:
-        print(city.name)
-        # wait = choice(wait_time)
-        # sleep(wait)
+        wait = choice(wait_time)
+        sleep(wait)
 
-        # rows = []
+        rows = []
 
-        # # Get all the statistics for each city and save to list of dictionaries
-        # for stat in list(net.possible_stats):
-        #     city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
-        #                              stat=stat, start_date='2000-01-01')
+        # Get all the statistics for each city and save to list of dictionaries
+        for stat in list(net.possible_stats):
+            city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
+                                     stat=stat, start_date='2000-01-01')
 
-        #     parsed = parse_city(city_data)
+            parsed = parse_city(city_data)
 
-        #     for entry in parsed:
-        #         row = {'date': entry.date, 'city': city.name,
-        #                'state': city.state, 'net_index_id': city.unit_id,
-        #                'lat': city.latitude, 'long': city.longitude,
-        #                'stat': stat, 'value': entry.value}
-        #         rows.append(row)
+            for entry in parsed:
+                row = {'date': entry.date, 'city': city.name,
+                       'state': city.state, 'net_index_id': city.unit_id,
+                       'lat': city.latitude, 'long': city.longitude,
+                       'stat': stat, 'value': entry.value}
+                rows.append(row)
 
-        # # Write to CSV
-        # file_exists = os.path.isfile(filename)
+        # Write to CSV
+        file_exists = os.path.isfile(filename)
 
-        # with open(filename, 'a') as csvfile:
-        #     fieldnames = ['date', 'city', 'state', 'net_index_id',
-        #                   'lat', 'long', 'stat', 'value']
-        #     w = csv.DictWriter(csvfile, fieldnames=fieldnames,
-        #                        delimiter=',', lineterminator='\n')
+        with open(filename, 'a') as csvfile:
+            fieldnames = ['date', 'city', 'state', 'net_index_id',
+                          'lat', 'long', 'stat', 'value']
+            w = csv.DictWriter(csvfile, fieldnames=fieldnames,
+                               delimiter=',', lineterminator='\n')
 
-        #     if not file_exists:
-        #         w.writeheader()
+            if not file_exists:
+                w.writeheader()
 
-        #     for row in rows:
-        #         w.writerow(row)
+            for row in rows:
+                w.writerow(row)
