@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import requests
 import json
+import requests
+from datetime import datetime, timedelta
 
 # TODO: Get global values
 # MAYBE: Get ISP information
@@ -12,6 +13,13 @@ class NetIndex():
     def __init__(self, base_api):
         self.base_api = base_api
 
+        self.possible_list_units = {'country': 3, 'state': 4,
+                                    'city': 5, 'isp': 6}
+        self.possible_units = {'country': 3, 'state': 7, 'city': 10}
+        self.possible_stats = {'dl_broadband': 0, 'ul_broadband': 1,
+                               'quality': 2, 'promise': 3, 'value': 4,
+                               'dl_mobile': 5, 'ul_mobile': 6}
+
     def generate_url(self, api_url, params):
         params_url = ["{0}={1}".format(k, v) for (k, v) in params.items()]
         full_url = "{0}?url={1}&{2}".format(self.base_api,
@@ -19,22 +27,30 @@ class NetIndex():
                                             '&'.join(params_url))
         return(full_url)
 
-    def get_list(self, geo_unit, country_id=None):
-        possible_units = {'country': 3, 'state': 4, 'city': 5, 'isp': 6}
+    def validate_date(self, date_text):
+        try:
+            datetime.strptime(date_text, '%Y-%m-%d')
+        except ValueError:
+            raise ValueError("Incorrect date format; should be YYYY-MM-DD.")
 
-        if geo_unit not in list(possible_units):
+    def get_list(self, geo_unit, country_id=None):
+        # Check for errors
+        if geo_unit not in list(self.possible_list_units):
             raise ValueError("Invalid geographic level. Expected one of {0}"
-                             .format(list(possible_units)))
+                             .format(list(self.possible_list_units)))
 
         if geo_unit is not 'country' and country_id is None:
             raise ValueError("No unit ID. A state, city, or ISP id is required.")
 
-        params = {'index': 0, 'index_level': possible_units[geo_unit]}
+        # Generate URL
+        params = {'index': 0, 'index_level': self.possible_list_units[geo_unit]}
 
         if country_id:
             params['id'] = country_id
 
         url = self.generate_url('api_list.php', params)
+
+        # Get data from API
         r = requests.get(url)
         data = r.json()
 
@@ -45,26 +61,32 @@ class NetIndex():
         return(data)
 
     def get_data(self, geo_unit, unit_id, stat, start_date, end_date=None):
-        possible_units = {'country': 3, 'state': 7, 'city': 10}
-        possible_stats = {'dl_broadband': 0, 'ul_broadband': 1,
-                          'quality': 2, 'promise': 3, 'value': 4,
-                          'dl_mobile': 5, 'ul_mobile': 6}
+        if not end_date:
+            yesterday = datetime.today() - timedelta(1)
+            end_date = yesterday.strftime('%Y-%m-%d')
 
-        if geo_unit not in list(possible_units):
+        # Check for errors
+        if geo_unit not in list(self.possible_units):
             raise ValueError("Invalid geographic level. Expected one of {0}"
-                             .format(list(possible_units)))
+                             .format(list(self.possible_units)))
 
-        if stat not in list(possible_stats):
+        if stat not in list(self.possible_stats):
             raise ValueError("Invalid statistic. Expected one of {0}"
-                             .format(list(possible_stats)))
+                             .format(list(self.possible_stats)))
 
-        params = {'index': possible_stats[stat],
+        self.validate_date(start_date)
+        self.validate_date(end_date)
+
+        # Generate URL
+        params = {'index': self.possible_stats[stat],
                   'index_start_date': start_date,
                   'index_date': end_date,
-                  'index_level': possible_units[geo_unit],
+                  'index_level': self.possible_units[geo_unit],
                   'id': unit_id}
 
         url = self.generate_url('api_summary.php', params)
+
+        # Get data from API
         r = requests.get(url)
         data = r.json()
 
@@ -88,5 +110,5 @@ if __name__ == '__main__':
     # data = net.get_data(geo_unit='country', unit_id=1, stat='dl_broadband',
     # data = net.get_data(geo_unit='state', unit_id=62, stat='dl_broadband',
     data = net.get_data(geo_unit='city', unit_id=3953, stat='dl_broadband',
-                        start_date='2015-07-21', end_date='2015-07-23')
+                        start_date='2015-07-21')
     print(data)
