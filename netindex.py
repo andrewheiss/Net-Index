@@ -179,6 +179,7 @@ if __name__ == '__main__':
         # Pause to be nice to the API
         if i != len(cities) - 1:
             wait = choice(config.WAIT_RANGE)
+            logger.info("{0} cities left to do.".format(len(cities) - 1))
             logger.info("Waiting for {0} seconds before moving on.".format(wait))
             sleep(wait)
         else:
