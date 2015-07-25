@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import config
 import csv
-import json
+import logging
 import os.path
 import requests
 from collections import namedtuple
@@ -13,6 +14,8 @@ from time import sleep
 
 # MAYBE: Get global values
 # MAYBE: Get ISP information
+
+logger = logging.getLogger(__name__)
 
 class NetIndex():
     """docstring for Netindex"""
@@ -126,15 +129,13 @@ def parse_city(raw_json):
 
 
 if __name__ == '__main__':
-    filename = 'city_data.csv'
-    wait_time = range(5, 10)
-
     net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
 
-    cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
+    cities = extract_cities(net.get_list(geo_unit='city', country_id=1))[0:2]
 
     # Save cities to CSV
-    with open('cities.csv', 'w', newline='') as csvfile:
+    logger.info("Saving full list of cities to {0}.".format(config.CITIES_FILE))
+    with open(config.CITIES_FILE, 'w', newline='') as csvfile:
         w = csv.writer(csvfile, delimiter=',', lineterminator='\n')
         w.writerow(cities[0]._fields)
 
@@ -144,11 +145,12 @@ if __name__ == '__main__':
     # Save city data to CSV
     Stat = namedtuple('Stat', ['net_index_id', 'date', 'stat', 'value'])
 
-    for city in cities[0:3]:
-        wait = choice(wait_time)
-        sleep(wait)
-
+    logger.info("Downloading data for each city.")
+    for i, city in enumerate(cities):
         rows = []
+
+        logger.info("Getting data for {0}, {1} (ID: {2})."
+                    .format(city.name, city.state, city.net_index_id))
 
         # Get all the statistics for each city and save to list of dictionaries
         for stat in list(net.possible_stats):
@@ -162,9 +164,10 @@ if __name__ == '__main__':
                 rows.append(row)
 
         # Write to CSV
-        file_exists = os.path.isfile(filename)
+        logger.info("Saving to {0}.".format(config.CITY_DATA_FILE))
+        file_exists = os.path.isfile(config.CITY_DATA_FILE)
 
-        with open(filename, 'a') as csvfile:
+        with open(config.CITY_DATA_FILE, 'a') as csvfile:
             w = csv.writer(csvfile, delimiter=',', lineterminator='\n')
 
             if not file_exists:  # Header
@@ -172,3 +175,11 @@ if __name__ == '__main__':
 
             for row in rows:
                 w.writerow(row)
+
+        # Pause to be nice to the API
+        if i != len(cities) - 1:
+            wait = choice(config.WAIT_RANGE)
+            logger.info("Waiting for {0} seconds before moving on.".format(wait))
+            sleep(wait)
+        else:
+            logger.info("All done! \(•◡•)/")
