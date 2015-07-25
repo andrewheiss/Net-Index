@@ -6,7 +6,7 @@ import os.path
 import requests
 from collections import namedtuple
 from datetime import datetime, timedelta
-from random import choice, sample
+from random import choice
 from time import sleep
 
 # For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
@@ -110,9 +110,9 @@ def extract_states(raw_json):
     return(states)
 
 def extract_cities(raw_json):
-    City = namedtuple('City', ['name', 'state', 'unit_id',
+    City = namedtuple('City', ['net_index_id', 'name', 'state',
                                'latitude', 'longitude'])
-    cities = [City(row['label'][:-4], row['label'][-2:], row['id'],
+    cities = [City(row['id'], row['label'][:-4], row['label'][-2:],
                    row['latitude'], row['longitude'])
               for row in raw_json.get('data')]
     return(cities)
@@ -126,12 +126,23 @@ def parse_city(raw_json):
 
 
 if __name__ == '__main__':
-    filename = "test.csv"
+    filename = 'city_data.csv'
     wait_time = range(5, 10)
 
     net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
 
     cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
+
+    # Save cities to CSV
+    with open('cities.csv', 'w', newline='') as csvfile:
+        w = csv.writer(csvfile, delimiter=',', lineterminator='\n')
+        w.writerow(cities[0]._fields)
+
+        for city in cities:
+            w.writerow(city)
+
+    # Save city data to CSV
+    Stat = namedtuple('Stat', ['net_index_id', 'date', 'stat', 'value'])
 
     for city in cities[0:3]:
         wait = choice(wait_time)
@@ -141,29 +152,23 @@ if __name__ == '__main__':
 
         # Get all the statistics for each city and save to list of dictionaries
         for stat in list(net.possible_stats):
-            city_data = net.get_data(geo_unit='city', unit_id=city.unit_id,
+            city_data = net.get_data(geo_unit='city', unit_id=city.net_index_id,
                                      stat=stat, start_date='2000-01-01')
 
             parsed = parse_city(city_data)
 
             for entry in parsed:
-                row = {'date': entry.date, 'city': city.name,
-                       'state': city.state, 'net_index_id': city.unit_id,
-                       'lat': city.latitude, 'long': city.longitude,
-                       'stat': stat, 'value': entry.value}
+                row = Stat(city.net_index_id, entry.date, stat, entry.value)
                 rows.append(row)
 
         # Write to CSV
         file_exists = os.path.isfile(filename)
 
         with open(filename, 'a') as csvfile:
-            fieldnames = ['date', 'city', 'state', 'net_index_id',
-                          'lat', 'long', 'stat', 'value']
-            w = csv.DictWriter(csvfile, fieldnames=fieldnames,
-                               delimiter=',', lineterminator='\n')
+            w = csv.writer(csvfile, delimiter=',', lineterminator='\n')
 
-            if not file_exists:
-                w.writeheader()
+            if not file_exists:  # Header
+                w.writerow(rows[0]._fields)
 
             for row in rows:
                 w.writerow(row)
