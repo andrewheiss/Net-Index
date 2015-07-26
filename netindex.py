@@ -60,7 +60,9 @@ class NetIndex():
         url = self.generate_url('api_list.php', params)
 
         # Get data from API
-        r = requests.get(url)
+        s = requests.session()
+        s.headers.update({"User-Agent": choice(config.user_agents)})
+        r = s.get(url)
         data = r.json()
 
         if data.get('error_code') > 0:
@@ -96,7 +98,9 @@ class NetIndex():
         url = self.generate_url('api_summary.php', params)
 
         # Get data from API
-        r = requests.get(url)
+        s = requests.session()
+        s.headers.update({"User-Agent": choice(config.user_agents)})
+        r = s.get(url)
         data = r.json()
 
         if data.get('error_code') > 0:
