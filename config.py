@@ -6,7 +6,8 @@ import logging.config
 CITIES_FILE = "cities.csv"
 CITY_DATA_FILE = "city_data.csv"
 LOG_FILE = "netindex.log"
-WAIT_RANGE = range(5, 10)
+WAIT_AVG = 6
+WAIT_STDEV = 1
 
 
 # ------------

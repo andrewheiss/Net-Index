@@ -7,7 +7,7 @@ import os.path
 import requests
 from collections import namedtuple
 from datetime import datetime, timedelta
-from random import choice
+from random import choice, gauss
 from time import sleep
 
 # For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
@@ -178,9 +178,8 @@ if __name__ == '__main__':
 
         # Pause to be nice to the API
         if i != len(cities) - 1:
-            wait = choice(config.WAIT_RANGE)
-            print(cities)
-            logger.info("Waiting for {0} seconds before moving on.".format(wait))
+            wait = abs(gauss(config.WAIT_AVG, config.WAIT_STDEV))
+            logger.info("Waiting for {0} seconds before moving on.".format(round(wait, 2)))
             sleep(wait)
         else:
             logger.info("All done! \(•◡•)/")
