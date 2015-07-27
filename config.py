@@ -3,8 +3,8 @@ import logging
 import logging.config
 
 
-CITIES_FILE = "cities.csv"
-CITY_DATA_FILE = "city_data.csv"
+CITIES_FILE = "data/cities.csv"
+CITY_DATA_FILE = "data/city_data.csv"
 LOG_FILE = "netindex.log"
 WAIT_AVG = 6
 WAIT_STDEV = 1

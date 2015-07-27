@@ -3,8 +3,10 @@
 import config
 import csv
 import logging
+import os
 import os.path
 import requests
+import zipfile
 from collections import namedtuple
 from datetime import datetime, timedelta
 from random import choice, gauss
@@ -186,4 +188,33 @@ if __name__ == '__main__':
             logger.info("Waiting for {0} seconds before moving on.".format(round(wait, 2)))
             sleep(wait)
         else:
-            logger.info("All done! \(•◡•)/")
+            logger.info("All done scraping!")
+
+    # --------------------
+    # Finalize CSV files
+    # --------------------
+    # Rename city metadata
+    parts = os.path.splitext(config.CITIES_FILE)
+    new_name = parts[0] + '_final' + parts[1]
+    logger.info("Renaming {0} to {1}".format(config.CITIES_FILE, new_name))
+    os.rename(config.CITIES_FILE, new_name)
+
+    # Rename actual daily city data
+    parts = os.path.splitext(config.CITY_DATA_FILE)
+    new_name = parts[0] + '_raw_final' + parts[1]
+    logger.info("Renaming {0} to {1}".format(config.CITIES_FILE, new_name))
+    os.rename(config.CITY_DATA_FILE, new_name)
+
+    # Zip up city data (because it's crazy huge)
+    zip_parts = os.path.splitext(new_name)
+    zip_new_name = zip_parts[0] + '.zip'
+    logger.info("Compressing city data to {0}".format(zip_new_name))
+    with zipfile.ZipFile(zip_new_name, 'w',
+                         compression=zipfile.ZIP_DEFLATED) as myzip:
+        myzip.write(new_name, arcname=os.path.basename(zip_parts[0]) + '.csv')
+
+    assert(os.path.isfile(zip_new_name))
+    assert(os.stat(zip_new_name).st_size > 0)
+    os.remove(new_name)
+
+    logger.info("All done with everything! \(•◡•)/")
