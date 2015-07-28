@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
+# --------------
+# Load modules
+# --------------
+# My modules
 import config
+
+# Full modules
 import csv
 import logging
 import os
 import os.path
 import requests
 import zipfile
+
+# Just parts of modules
 from collections import namedtuple
 from datetime import datetime, timedelta
 from random import choice, gauss
@@ -14,9 +22,7 @@ from time import sleep
 
 # For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
 
-# MAYBE: Get global values
-# MAYBE: Get ISP information
-
+# Start log
 logger = logging.getLogger(__name__)
 
 class NetIndex():
