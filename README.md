@@ -28,14 +28,16 @@ Because it can take a while to make all the necessary API calls (each city requi
 Run the following series of commands to 
 
 1. Navigate to the project folder in a terminal: `cd /path/to/netindex/`
+2. Change any of the modifiable variables in `config.py` (though the defaults are all sensible, so you shouldn't have to change anything)
 2. Run the Python script to loop through the API: `python3 netindex.py`
-    * Run in background
-    * Log
-    * Wait for hours and hours
-3. Run the R script to clean and process the raw long data: `Rscript clean_data.R`
-4. All the generated CSVs will be in `data/*.csv`
+    * **NB**: **Running this command will take a very long time**. Each city requires 7 API calls, and there are over 6,000 cities. Peppering the server with so many back-to-back calls is not very nice, so to avoid stressing the Net Index server, the script pauses for a random amount of time between each city. The wait time is drawn from a normal distribution with a mean of 6 and standard deviation of 1 (set with ASDF and ASDF in `config.py`), so generally between 4–8 seconds. As a result, it will take upwards of 10 hours to collect each city: ![(6000 * 6) / 60 / 60 = 10](docs/latex-image-1.svg). Because it takes so long, *it's best to run this on another computer*. <!-- \frac{\approx 6,000 \text{ cities}~\times ~\mathcal{N}(6, 1) \text{ seconds}}{60 \times 60} = ~\approx 10 \text{ hours} -->
+    * It's also recommended to **run the script in the background** so you can close the terminal window without killing the script. Either append a `&` to the command or use `screen`: `python3 netindex.py &` or `screen -dm netindex.py`.
+    * The script provides detailed progress information in the log file (`netindex.log`), which you can track with `tail`: `tail -f netindex.log`, or, if running on a remote server, `ssh -t 111.111.111.111 "tail -f ~/local/netindex/netindex.log"`. End the tail with `ctrl+x` or don't use the `-t` flag.
+    * The resuling CSV file will be ≈1 GB with millions of rows (one row for each statistic for each day for each city). 
+3. Run the R script to clean and process the raw long data: `Rscript clean_data.R`. In just a few minutes, the scrip will genearte 8 CSVs (ranging from ≈24 KB to ≈1 GB).
+4. All the generated CSVs will be in `data/*.csv`. If you're using a remote machine, download them to your local computer with `scp`.
 
-The whole process is summarized in the flowcharts below:
+The whole process (as well as some documentation for the API) is summarized in the flowcharts below:
 
 ![1. Get list of cities](docs/flowchart-01.png)
 
