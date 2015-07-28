@@ -9,7 +9,7 @@ Access the undocumented API for Ookla's fantastic [Net Index](http://www.netinde
 
 ## Installation
 
-Because it can take a while to make all the necessary API calls (each city requires 7 individual API calls), it's best to run this script on a separate computer, preferrably a virtual machine in the cloud, like a [Digital Ocean server](https://www.digitalocean.com) or [Amazon EC2 instance](http://aws.amazon.com/ec2/). 
+Because it can take a while to make all the necessary API calls (each city requires 7 individual API calls), it's best to run this script on a separate computer, preferably a virtual machine in the cloud, like a [Digital Ocean server](https://www.digitalocean.com) or [Amazon EC2 instance](http://aws.amazon.com/ec2/). 
 
 1. Install [Python 3](https://www.python.org) and [R 3](http://www.r-project.org) (script last tested with Python 3.4.3 and R 3.2.1)
     * Python
@@ -34,7 +34,7 @@ Run the following series of commands to
     * It's also recommended to **run the script in the background** so you can close the terminal window without killing the script. Either append a `&` to the command or use `screen`: `python3 netindex.py &` or `screen -dm netindex.py`.
     * The script provides detailed progress information in the log file (`netindex.log`), which you can track with `tail`: `tail -f netindex.log`, or, if running on a remote server, `ssh -t 111.111.111.111 "tail -f ~/local/netindex/netindex.log"`. End the tail with `ctrl+x` or don't use the `-t` flag.
     * The resuling CSV file will be ≈1 GB with millions of rows (one row for each statistic for each day for each city). 
-3. Run the R script to clean and process the raw long data: `Rscript clean_data.R`. In just a few minutes, the scrip will genearte 8 CSVs (ranging from ≈24 KB to ≈1 GB).
+3. Run the R script to clean and process the raw long data: `Rscript clean_data.R`. In just a few minutes, the script will generate 8 CSVs (ranging from ≈24 KB to ≈1 GB).
 4. All the generated CSVs will be in `data/*.csv`. If you're using a remote machine, download them to your local computer with `scp`.
 
 The whole process (as well as some documentation for the API) is summarized in the flowcharts below:
