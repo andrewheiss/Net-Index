@@ -228,7 +228,7 @@ if __name__ == '__main__':
     # Deal with city-level metadata
     # -------------------------------
     # Get list of all cities in database
-    cities = extract_cities(net.get_list(geo_unit='city', country_id=1))[0:2]
+    cities = extract_cities(net.get_list(geo_unit='city', country_id=1))
 
     # Save cities to CSV
     logger.info("Saving full list of cities to {0}.".format(config.CITIES_FILE))
