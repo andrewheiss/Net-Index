@@ -1,7 +1,16 @@
+# --------------
+# Load modules
+# --------------
 import sys
 import logging
 import logging.config
 
+
+#   ----------------------------------
+#  ------------------------------------
+# --------------------------------------
+#   ONLY CHANGE THINGS IN THIS SECTION
+# --------------------------------------
 
 CITIES_FILE = "data/cities.csv"
 CITY_DATA_FILE = "data/city_data.csv"
@@ -9,6 +18,14 @@ LOG_FILE = "netindex.log"
 WAIT_AVG = 6
 WAIT_STDEV = 1
 
+# --------------------------------------
+#  ------------------------------------
+#   ----------------------------------
+
+
+# -----------------------
+# Humanize HTTP headers
+# -----------------------
 user_agents = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10) AppleWebKit/600.1.25 (KHTML, like Gecko) Version/8.0 Safari/600.1.25',
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.124 Safari/537.36',
@@ -17,6 +34,7 @@ user_agents = [
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.104 Safari/537.36',
     'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.111 Safari/537.36'
 ]
+
 
 # ------------
 # Set up log

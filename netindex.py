@@ -20,14 +20,32 @@ from datetime import datetime, timedelta
 from random import choice, gauss
 from time import sleep
 
-# For reference: US = 1, NC = 62, Durham = 3953, Chapel Hill = 3382
-
 # Start log
 logger = logging.getLogger(__name__)
 
+
+# ------------
+# API method
+# ------------
 class NetIndex():
-    """docstring for Netindex"""
-    def __init__(self, base_api):
+    """Generate API URLs for Ookla's Net Index.
+
+    The undocumented Net Index API uses different combination of HTTP GET
+    variables to query the underlying database and return JSON data. This
+    function makes those parameters more human readable and easier to use.
+
+    The class has two primary functions: get_list() for retrieving a list of
+    countries, states, or cities in the Net Index database, and get_data() for
+    retrieving internet statistics for a given geographic unit.
+
+    Args:
+        base_api (str): The base URL for the Net Index API
+
+    Returns:
+        A NetIndex object that can make API calls using get_list() and get_data()
+
+    """
+    def __init__(self, base_api='http://explorer.netindex.com/apiproxy.php'):
         self.base_api = base_api
 
         self.possible_list_units = {'country': 3, 'state': 4,
@@ -37,20 +55,56 @@ class NetIndex():
                                'quality': 2, 'promise': 3, 'value': 4,
                                'dl_mobile': 5, 'ul_mobile': 6}
 
-    def generate_url(self, api_url, params):
+    def _generate_url(self, api_url, params):
+        """Generate a URL to make an API call.
+
+        Args:
+            api_url (str): Base URL for the API
+                           (e.g. http://explorer.netindex.com/apiproxy.php)
+            params (dict): A dictionary of parameters to format as GET variables
+                           in the URL (e.g. {'index_start_date': '2000-01-01',
+                                             'index': 6, 'id': '3', 'index_level': 10,
+                                             'index_date': '2015-07-27'})
+
+        Returns:
+            A complete URL
+            (e.g. http://explorer.netindex.com/apiproxy.php?url=api_summary.php&
+                         index_start_date=2000-01-01&id=3&index=5&
+                         index_level=10&index_date=2015-07-27)
+        """
         params_url = ["{0}={1}".format(k, v) for (k, v) in params.items()]
         full_url = "{0}?url={1}&{2}".format(self.base_api,
                                             api_url,
                                             '&'.join(params_url))
         return(full_url)
 
-    def validate_date(self, date_text):
+    def _validate_date(self, date_text):
+        """Ensure that a given string follows the ISO 8601 format.
+
+        Args:
+            date_text (str): Date string to be checked
+
+        Raises:
+            ValueError: If date_text is not an ISO 8601 date
+        """
         try:
             datetime.strptime(date_text, '%Y-%m-%d')
         except ValueError:
             raise ValueError("Incorrect date format; should be YYYY-MM-DD.")
 
     def get_list(self, geo_unit, country_id=None):
+        """Get a list of JSON-encoded data for a given level of geographic
+        unit (country, state, city, ISP).
+
+        Args:
+            geo_unit (str): One of 'country', 'state', 'city', or 'isp'
+            country_id (int): The id of the country that contains the desired
+                              states, cities, or ISPs
+                              (e.g. United States = 1)
+
+        Returns:
+            JSON-encoded Net Index data
+        """
         # Check for errors
         if geo_unit not in list(self.possible_list_units):
             raise ValueError("Invalid geographic level. Expected one of {0}"
@@ -62,10 +116,11 @@ class NetIndex():
         # Generate URL
         params = {'index': 0, 'index_level': self.possible_list_units[geo_unit]}
 
+        # Add country_id to URL parameters if given
         if country_id:
             params['id'] = country_id
 
-        url = self.generate_url('api_list.php', params)
+        url = self._generate_url('api_list.php', params)
 
         # Get data from API
         s = requests.session()
@@ -80,6 +135,24 @@ class NetIndex():
         return(data)
 
     def get_data(self, geo_unit, unit_id, stat, start_date, end_date=None):
+        """Get JSON-encoded data for a given internet statistic for given
+        geographic unit over a given time period.
+
+        Args:
+            geo_unit (str): One of 'country', 'state', or 'city'
+            unit_id (id): ID for geographic unit (retrieved from get_list()).
+                          E.g. North Carolina = 62; Durham = 3953; Chapel Hill = 3382
+            stat (str): Statistic to be collected. One of 'dl_broadband',
+                        'ul_broadband', 'quality', 'promise', 'value',
+                        'dl_mobile', or 'ul_mobile'
+            start_date (str): Date formatted as YYYY-MM-DD (ISO 8601)
+            end_date (Optional[str]): Date formatted as YYYY-MM-DD (ISO 8601).
+                                      Defaults to the previous day.
+
+        Returns:
+            JSON-encoded Net Index data
+        """
+        # Use yesterday's date if no end date provided
         if not end_date:
             yesterday = datetime.today() - timedelta(1)
             end_date = yesterday.strftime('%Y-%m-%d')
@@ -93,8 +166,8 @@ class NetIndex():
             raise ValueError("Invalid statistic. Expected one of {0}"
                              .format(list(self.possible_stats)))
 
-        self.validate_date(start_date)
-        self.validate_date(end_date)
+        self._validate_date(start_date)
+        self._validate_date(end_date)
 
         # Generate URL
         params = {'index': self.possible_stats[stat],
@@ -103,7 +176,7 @@ class NetIndex():
                   'index_level': self.possible_units[geo_unit],
                   'id': unit_id}
 
-        url = self.generate_url('api_summary.php', params)
+        url = self._generate_url('api_summary.php', params)
 
         # Get data from API
         s = requests.session()
@@ -118,13 +191,18 @@ class NetIndex():
         return(data)
 
 
+# ------------------------------
+# Helper functions for parsing
+# ------------------------------
 def extract_states(raw_json):
+    """Map raw JSON to a named tuple of state-specific metadata."""
     State = namedtuple('State', ['name', 'abbreviation', 'unit_id'])
     states = [State(row['label'], row['alpha_code'], row['id'])
               for row in raw_json.get('data')]
     return(states)
 
 def extract_cities(raw_json):
+    """Map raw JSON to a named tuple of city-specific metadata."""
     City = namedtuple('City', ['net_index_id', 'name', 'state',
                                'latitude', 'longitude'])
     cities = [City(row['id'], row['label'][:-4], row['label'][-2:],
@@ -133,16 +211,23 @@ def extract_cities(raw_json):
     return(cities)
 
 def parse_city(raw_json):
-    # TODO: Make sure these are all the values wanted (i.e. no IP addresses or # ISPs)
+    """Map raw JSON to a named tuple of city-specific internet statistics."""
     Statistic = namedtuple('Statistic', ['date', 'value'])
     data = [Statistic(row['aggregate_date'], row['index_value'])
             for row in raw_json.get('data').get('index_values')]
     return(data)
 
 
+# ---------------
+# Actual script
+# ---------------
 if __name__ == '__main__':
-    net = NetIndex(base_api='http://explorer.netindex.com/apiproxy.php')
+    net = NetIndex()
 
+    # -------------------------------
+    # Deal with city-level metadata
+    # -------------------------------
+    # Get list of all cities in database
     cities = extract_cities(net.get_list(geo_unit='city', country_id=1))[0:2]
 
     # Save cities to CSV
@@ -154,7 +239,10 @@ if __name__ == '__main__':
         for city in cities:
             w.writerow(city)
 
-    # Save city data to CSV
+    # --------------------------------
+    # Deal with individual city data
+    # --------------------------------
+    # Save individual city data to CSV
     Stat = namedtuple('Stat', ['net_index_id', 'date', 'stat', 'value'])
 
     logger.info("Downloading data for each city.")

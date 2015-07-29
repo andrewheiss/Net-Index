@@ -3,7 +3,6 @@
 #-----------------
 # Load libraries
 #-----------------
-# TODO: Check/install packages
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(tidyr))
